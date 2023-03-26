@@ -38,9 +38,9 @@
 #endif
 
 // SDL
-#include <SDL.h>
-#if !SDL_VERSION_ATLEAST(2,0,17)
-#error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
+#include <SDL3/SDL.h>
+#if !SDL_VERSION_ATLEAST(3,0,0)
+#error This backend requires SDL 3.0.0
 #endif
 
 // SDL_Renderer data
@@ -95,8 +95,8 @@ static void ImGui_ImplSDLRenderer_SetupRenderState()
 
 	// Clear out any viewports and cliprect set by the user
     // FIXME: Technically speaking there are lots of other things we could backup/setup/restore during our render process.
-	SDL_RenderSetViewport(bd->SDLRenderer, nullptr);
-	SDL_RenderSetClipRect(bd->SDLRenderer, nullptr);
+	SDL_SetRenderViewport(bd->SDLRenderer, nullptr);
+	SDL_SetRenderClipRect(bd->SDLRenderer, nullptr);
 }
 
 void ImGui_ImplSDLRenderer_NewFrame()
@@ -117,7 +117,7 @@ void ImGui_ImplSDLRenderer_RenderDrawData(ImDrawData* draw_data)
     // to SDL_RenderGeometryRaw() by that scale factor. In that case we don't want to be also scaling it ourselves here.
     float rsx = 1.0f;
 	float rsy = 1.0f;
-	SDL_RenderGetScale(bd->SDLRenderer, &rsx, &rsy);
+	SDL_GetRenderScale(bd->SDLRenderer, &rsx, &rsy);
     ImVec2 render_scale;
 	render_scale.x = (rsx == 1.0f) ? draw_data->FramebufferScale.x : 1.0f;
 	render_scale.y = (rsy == 1.0f) ? draw_data->FramebufferScale.y : 1.0f;
@@ -136,9 +136,9 @@ void ImGui_ImplSDLRenderer_RenderDrawData(ImDrawData* draw_data)
         SDL_Rect    ClipRect;
     };
     BackupSDLRendererState old = {};
-    old.ClipEnabled = SDL_RenderIsClipEnabled(bd->SDLRenderer) == SDL_TRUE;
-    SDL_RenderGetViewport(bd->SDLRenderer, &old.Viewport);
-    SDL_RenderGetClipRect(bd->SDLRenderer, &old.ClipRect);
+    old.ClipEnabled = SDL_RenderClipEnabled(bd->SDLRenderer) == SDL_TRUE;
+    SDL_GetRenderViewport(bd->SDLRenderer, &old.Viewport);
+    SDL_GetRenderClipRect(bd->SDLRenderer, &old.ClipRect);
 
 	// Will project scissor/clipping rectangles into framebuffer space
 	ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -177,7 +177,7 @@ void ImGui_ImplSDLRenderer_RenderDrawData(ImDrawData* draw_data)
                     continue;
 
                 SDL_Rect r = { (int)(clip_min.x), (int)(clip_min.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y) };
-                SDL_RenderSetClipRect(bd->SDLRenderer, &r);
+                SDL_SetRenderClipRect(bd->SDLRenderer, &r);
 
                 const float* xy = (const float*)(const void*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, pos));
                 const float* uv = (const float*)(const void*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, uv));
@@ -200,8 +200,8 @@ void ImGui_ImplSDLRenderer_RenderDrawData(ImDrawData* draw_data)
     }
 
     // Restore modified SDL_Renderer state
-    SDL_RenderSetViewport(bd->SDLRenderer, &old.Viewport);
-    SDL_RenderSetClipRect(bd->SDLRenderer, old.ClipEnabled ? &old.ClipRect : nullptr);
+    SDL_SetRenderViewport(bd->SDLRenderer, &old.Viewport);
+    SDL_SetRenderClipRect(bd->SDLRenderer, old.ClipEnabled ? &old.ClipRect : nullptr);
 }
 
 // Called by Init/NewFrame/Shutdown
@@ -225,7 +225,7 @@ bool ImGui_ImplSDLRenderer_CreateFontsTexture()
     }
     SDL_UpdateTexture(bd->FontTexture, nullptr, pixels, 4 * width);
     SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(bd->FontTexture, SDL_ScaleModeLinear);
+    SDL_SetTextureScaleMode(bd->FontTexture, SDL_SCALEMODE_LINEAR);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
